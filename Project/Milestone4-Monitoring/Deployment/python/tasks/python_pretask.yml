@@ -1,0 +1,4 @@
+---
+- name: Install Python #https://gist.github.com/gwillem/4ba393dceb55e5ae276a87300f6b8e6f
+  raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+  become: yes

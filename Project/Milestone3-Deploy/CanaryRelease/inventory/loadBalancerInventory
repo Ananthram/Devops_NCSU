@@ -1,0 +1,2 @@
+[nodes]
+111.111.111.111 ansible_ssh_user=root

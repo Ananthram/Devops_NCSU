@@ -1,0 +1,58 @@
+# Example MySQL config file for large systems from https://github.com/zuazo/mysql_tuning-cookbook/blob/master/my.cnf-example-files/my-medium.cnf.sh
+#
+# This is for a large system with memory = 512M where the system runs mainly
+# MySQL.
+#
+# MySQL programs look for option files in a set of
+# locations which depend on the deployment platform.
+# You can copy this option file to one of those
+# locations. For information about these locations, see:
+# http://dev.mysql.com/doc/mysql/en/option-files.html
+#
+# In this file, you can use all long options that a program supports.
+# If you want to know which options a program supports, run the program
+# with the "--help" option.
+
+
+# The following options will be passed to all MySQL clients
+[client]
+user = {{mysql_client_user}}
+password	= {{mysql_client_password}}
+port		= {{mysql_client_port}}
+#socket		= /var/run/mysqld/mysqld.sock
+
+
+
+# Here follows entries for some specific programs
+
+
+
+# The MySQL server
+[mysqld]
+user = {{mysql_server_user}}
+port		= {{mysql_server_port}}
+#socket		= /var/run/mysqld/mysqld.sock
+lower_case_table_names = 1
+skip-grant-tables
+skip-external-locking
+
+log_error = /var/log/mysql/error.log
+key_buffer_size          = 16M
+#max_allowed_packet      = 16M
+thread_stack            = 192K
+thread_cache_size       = 8
+query_cache_limit       = 1M
+query_cache_size        = 16M
+
+expire_logs_days        = 10
+max_binlog_size         = 100M
+
+[mysqld_safe]
+#socket          = /var/run/mysqld/mysqld.sock
+
+
+[isamchk]
+key_buffer              = 16M
+
+
+!includedir /etc/mysql/conf.d/

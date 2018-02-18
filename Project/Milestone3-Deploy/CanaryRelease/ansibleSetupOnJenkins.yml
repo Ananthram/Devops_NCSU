@@ -1,0 +1,71 @@
+---
+- hosts: nodes
+
+  tasks:
+    #Copy ansible stuff
+    - name: make checkbox Stable ansible directory
+      file:
+        path: /home/checkboxStable
+        state: directory
+
+    - name: make checkbox Canary ansible directory
+      file:
+        path: /home/checkboxCanary
+        state: directory
+
+    - name: make loadbalancer ansible directory
+      file:
+        path: /home/loadbalancer
+        state: directory
+
+    # LOAD BALANCER STUFF
+    - name: copy loadbalancer ansible scripts
+      copy:
+        src: loadbalancer/loadBalancerSetup.yml
+        dest: /home/loadbalancer/loadBalancerSetup.yml
+
+    - name: copy DO loadbalancer ansible scripts
+      copy:
+        src: loadbalancer/createLoadBalancer.yml
+        dest: /home/loadbalancer/createLoadBalancer.yml
+
+    - name: move proxy/load balancer over
+      copy:
+        src: loadbalancer/infrastructure.js
+        dest: /home/loadbalancer/infrastructure.js
+
+    - name: move proxy/load balancer package.json
+      copy:
+        src: loadbalancer/package.json
+        dest: /home/loadbalancer/package.json
+
+    # STABLE STUFF
+    - name: copy stable ansible scripts for checkboxio
+      copy:
+        src: checkboxStable/stableSetup.yml
+        dest: /home/checkboxStable/stableSetup.yml
+
+    - name: copy DO stable ansible scripts for checkboxio
+      copy:
+        src: checkboxStable/createStable.yml
+        dest: /home/checkboxStable/createStable.yml
+      tags:
+        - test
+
+    # CANARY STUFF
+    - name: copy canary ansible scripts for checkboxio
+      copy:
+        src: checkboxCanary/canarySetup.yml
+        dest: /home/checkboxCanary/canarySetup.yml
+
+    - name: copy DO canary ansible scripts for checkboxio
+      copy:
+        src: checkboxCanary/createCanary.yml
+        dest: /home/checkboxCanary/createCanary.yml
+      tags:
+        - test
+
+    - name: copy canary post-receive for checkboxio
+      copy:
+        src: checkboxCanary/post-receive
+        dest: /home/checkboxCanary/post-receive

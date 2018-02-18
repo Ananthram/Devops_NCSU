@@ -1,0 +1,26 @@
+---
+
+
+- setup:
+  register: facts
+
+- debug: var=facts
+
+- name: Create a configuration file and add your license key
+  become: yes
+  template:
+    src: "{{device_name}}"
+    dest: /etc/newrelic-infra.yml
+  
+- name: Enable New Relic’s GPG key
+  raw: curl https://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg | sudo apt-key add -
+
+- name: Create the agent’s apt repo using the command for your distribution version
+  raw: printf "deb [arch=amd64] http://download.newrelic.com/infrastructure_agent/linux/apt xenial main" | sudo tee -a /etc/apt/sources.list.d/newrelic-infra.list
+
+
+- name: Install New Relic Agent
+  become: yes
+  apt:
+    name: newrelic-infra
+    update_cache: yes

@@ -1,0 +1,344 @@
+---
+- hosts: nodes
+
+  vars:
+    - my_jenkins_params:
+        url_username: admin
+        url_password: placeholder
+        url: sampleURL
+    - oracle_java_version: 8
+    - oracle_java_home: "/usr/lib/jvm/java-{{ oracle_java_version }}-oracle"
+    - home_path: /home/
+
+  tasks:
+    - name: Install required system packages.
+      apt: pkg={{ item }} state=present update-cache=yes
+      with_items:
+        - sshpass
+        - software-properties-common
+        - python-dev
+        - python-pip
+        - apt-transport-https
+        - ca-certificates
+        - gcc
+        - python-setuptools
+        - git-core
+        - python-setuptools
+        - libffi-dev
+        - libssl-dev
+      become: yes
+
+    # To get latest ansible, updgrade needed (https://github.com/ansible/ansible/issues/31741)
+    - name: install setuptools
+      pip:
+        name: setuptools
+        extra_args: --upgrade
+
+    - name: install pyopenssl
+      pip:
+        name: pyopenssl
+
+    - name: install ndg-httpsclient
+      pip:
+        name: ndg-httpsclient
+
+    - name: install pyasn1
+      pip:
+        name: pyasn1
+
+    - name: install ansible
+      pip:
+        name: ansible
+
+    # Java for jenkins
+    - name: Adding Java ppa
+      apt_repository:
+        repo: ppa:webupd8team/java
+        state: present
+      become: yes
+
+    - name: Accept Java license
+      debconf: name='oracle-java{{ oracle_java_version }}-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+      become: yes
+
+    - name: Install Java {{ oracle_java_version }} and set it as default version
+      apt:
+        name: oracle-java{{ oracle_java_version }}-installer
+        state: latest
+        cache_valid_time: 3600
+        update_cache: yes
+      become: yes
+
+    - name: set Java {{ oracle_java_version }} as default version
+      apt:
+        name: oracle-java{{ oracle_java_version }}-set-default
+        state: latest
+        update_cache: yes
+      become: yes
+
+    - name: upgrade and update the system
+      become: yes
+      apt:
+        upgrade: dist
+        update_cache: yes
+
+    #Install nodejs latest
+    - name: Add Nodesource apt key.
+      apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280
+        id: "68576280"
+        state: present
+
+    - name: Add NodeSource repositories for Node.js.
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      with_items:
+        - "deb https://deb.nodesource.com/node_6.x trusty main"
+      register: node_repo
+
+    - name: Update apt cache if repo was added.
+      apt: update_cache=yes
+      when: node_repo.changed
+
+    - name: Ensure Node.js and npm are installed.
+      apt: "name=nodejs=6* state=present"
+
+
+    #Jenkins
+    - name: Add Jenkins public key
+      become: yes
+      apt_key:
+        url: "https://pkg.jenkins.io/debian-stable/jenkins.io.key"
+        state: present
+
+    - name: Add jenkins repo to the repo/source list
+      become: yes
+      apt_repository:
+        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+
+    - name: Install Jenkins package
+      become: yes
+      apt:
+        update_cache: yes
+        pkg: jenkins
+        state: present
+
+    - name: Install python-jenkins and python-lxml
+      become: yes
+      apt:
+        update_cache: yes
+        pkg: "{{item}}"
+        state: present
+      with_items:
+        - python-jenkins
+        - python-lxml
+
+    # Set home path for the machine running
+    - set_fact:
+        home_var: "{{ lookup('env','HOME') }}"
+
+    - pause:
+        seconds: 15
+
+    - name: get admin pass and register it
+      shell: "cat /var/lib/jenkins/secrets/initialAdminPassword"
+      register: admin_pass
+      tags:
+        - test
+      become: yes
+
+    - debug:
+        msg: "{{ admin_pass.stdout }}"
+
+    # SKIPS THE WIZARD
+    - name: Configure JVM Arguments
+      become: yes
+      lineinfile:
+        dest: /etc/default/jenkins
+        regexp: '^JAVA_ARGS='
+        line: 'JAVA_ARGS="-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"'
+
+#restarting jenkins service to apply the changes in the config above
+    - name: Restart Jenkins
+      become: yes
+      service:
+        name: jenkins
+        state: restarted
+#
+#
+# #wait for jenkins to come back
+    - name: Wait for Jenkins to start up
+      wait_for: timeout=120
+      delegate_to: localhost
+
+    - debug:
+        var: my_jenkins_params.url_username
+
+    - set_fact:
+       new_params: "{{ my_jenkins_params|combine({'url_password':'{{ admin_pass.stdout }}'}, recursive=True) }}"
+
+    - set_fact:
+       URL: "http://{{ ansible_ssh_host }}:8080"
+
+
+    - set_fact:
+       new_jenkins_params: "{{ new_params|combine({'url':URL}, recursive=True) }}"
+
+    # Commented out b/c we do not want password to show on console
+    - debug:
+       var: new_jenkins_params
+
+#install custom in-build available jenkin plugins
+
+    - name: Install jenkin subversion plugin
+      jenkins_plugin:
+        name: subversion
+        params: "{{new_jenkins_params}}"
+
+    - name: Install jenkin github branch source plugin
+      jenkins_plugin:
+        name: github-branch-source
+        params: "{{new_jenkins_params}}"
+
+    - name: Install jenkin ssh-slaves plugin
+      jenkins_plugin:
+        name: ssh-slaves
+        params: "{{new_jenkins_params}}"
+
+    - name: Install jenkin antplugin
+      jenkins_plugin:
+        name: ant
+        params: "{{new_jenkins_params}}"
+
+    - name: Install jenkin workflow-aggregator
+      jenkins_plugin:
+        name: workflow-aggregator
+        params: "{{new_jenkins_params}}"
+
+    - name: Install jenkin pipeline-github-lib
+      jenkins_plugin:
+        name: pipeline-github-lib
+        params: "{{new_jenkins_params}}"
+
+    - name: Install jenkin postbuild task plugin
+      jenkins_plugin:
+        name: postbuild-task
+        params: "{{new_jenkins_params}}"
+
+# restart jenkins once plugins are installed
+
+    - name: Restart Jenkins
+      become: yes
+      service:
+        name: jenkins
+        state: restarted
+
+
+#wait for jenkins to come back
+    - name: Wait for Jenkins to start up
+      wait_for: timeout=120
+      delegate_to: localhost
+
+    #setup jenkins user to have sudo no passwd 
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: visudo -cf %s
+
+    - name: Add jenkins users to wheel group
+      user:
+        name: jenkins
+        groups: "wheel, ssh"
+        append: yes
+        #update_password: always
+        #password: $6$12346789$LOJiuxAUNIEROWh9H4rZ6Stctr1huDh7UT4uzN5yx/tjmTGIlMb4CXNSdRfKPZWaNjR5rgX1ixKcveEE8REFU.
+      tags:
+        - wheel
+
+    - name: Add root users to wheel group
+      user:
+        name: root
+        groups: "wheel"
+        append: yes
+
+# restart jenkins once plugins are installed
+
+    - name: Restart Jenkins
+      become: yes
+      service:
+        name: jenkins
+        state: restarted
+
+
+#wait for jenkins to come back
+    - name: Wait for Jenkins to start up
+      wait_for: timeout=120
+      delegate_to: localhost
+
+    - name: Downloading Jenkins CLI Jar
+      get_url:
+        url: "http://{{ansible_ssh_host}}:8080/jnlpJars/jenkins-cli.jar"
+        dest: "{{home_path}}/"
+        mode: 0755
+
+    # STABLE JOB
+    - name: Checking Job List For stable checkbox.io
+      become: true
+      shell: "java -jar {{home_path}}/jenkins-cli.jar -s http://{{ ansible_ssh_host }}:8080 list-jobs --username admin --password {{ admin_pass.stdout }}"
+      register: job_checkbox1
+      changed_when: "job_checkbox1.stdout.find('stable checkbox.io') == -1"
+
+    - name: Copying Checkbox.io Stable Job XML
+      copy:
+        src:  checkboxStable/checkboxStable.xml
+        dest: "{{home_path}}/checkbox1.xml"
+
+    - name: Create Jenkins Jobs for stable heckbox.io Using XML
+      become: true
+      shell: "java -jar {{home_path}}/jenkins-cli.jar -s http://{{ ansible_ssh_host }}:8080 create-job stable_checkbox.io < {{home_path}}/checkbox1.xml --username admin --password {{admin_pass.stdout}}"
+      when: "job_checkbox1.stdout.find('stable_checkbox.io') == -1"
+
+    - name: Removing stable Checkbox.io XML file
+      file:
+        path: "{{home_path}}/checkbox1.xml"
+        state: absent
+
+    # CANARY JOB
+    - name: Checking Job List For canary checkbox.io
+      become: true
+      shell: "java -jar {{home_path}}/jenkins-cli.jar -s http://{{ ansible_ssh_host }}:8080 list-jobs --username admin --password {{ admin_pass.stdout }}"
+      register: job_checkbox2
+      changed_when: "job_checkbox2.stdout.find('canary checkbox.io') == -1"
+      tags:
+        - test
+
+    - name: Copying Checkbox.io Stable Job XML
+      copy:
+        src:  checkboxCanary/checkboxCanary.xml
+        dest: "{{home_path}}/checkbox2.xml"
+      tags:
+        - test
+
+    - name: Create Jenkins Jobs for canary checkbox.io Using XML
+      become: true
+      shell: "java -jar {{home_path}}/jenkins-cli.jar -s http://{{ ansible_ssh_host }}:8080 create-job canary_checkbox.io < {{home_path}}/checkbox2.xml --username admin --password {{admin_pass.stdout}}"
+      when: "job_checkbox2.stdout.find('canary_checkbox.io') == -1"
+      tags:
+        - test
+
+    - name: Removing canary Checkbox.io XML file
+      file:
+        path: "{{home_path}}/checkbox2.xml"
+        state: absent
+      tags:
+        - test

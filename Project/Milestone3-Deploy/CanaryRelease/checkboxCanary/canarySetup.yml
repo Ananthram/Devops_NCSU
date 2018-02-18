@@ -1,0 +1,168 @@
+---
+#http://docs.ansible.com/ansible/latest/intro_configuration.html#ask-pass
+#THIS IS THE CANARY ANSIBLE SCRIPT SETUP SCRIPT
+
+#Use this terminal command to stress out the canary server and increase cpu usage, which then respond with an alert
+#stress --cpu 3 --timeout 60
+
+- hosts: all
+  gather_facts: no
+
+  pre_tasks:
+    - name: Install Python
+      raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+
+    - name: Turn on gather_facts
+      setup: 
+
+  tasks:
+    - name: Install checkbox.io dependencies
+      become: yes
+      apt:
+        update_cache: yes
+        pkg: "{{item}}"
+        state: present
+      with_items:
+        - npm
+        - nginx
+        - git
+        - python-pip
+        - stress
+      tags:
+        - test
+
+    - name: Clone checkbox.io
+      git:
+        repo: 'https://github.com/vchawla3/checkbox.io.git'
+        version: canary
+        dest: /home/checkboxio
+
+    - name: make bare repo folder
+      file:
+        path: /home/checkbox.git
+        state: directory
+
+    - name: make bare git repo
+      shell: "cd /home/checkbox.git && git init --bare"
+
+    - name: move post-receive file to bare repo
+      copy:
+        src: post-receive
+        dest: /home/checkbox.git/hooks/post-receive
+        mode: 0777
+
+    # Found at https://github.com/nodesource/ansible-nodejs-role/issues/33
+    - name: Add Nodesource Keys
+      apt_key:
+        id: 68576280
+        url: "https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280"
+        #url: 'https://deb.nodesource.com/gpgkey/nodesource.gpg.key'
+        #state: present
+        validate_certs: False
+
+    - name: Add NodeSource deb repository
+      apt_repository: 
+        repo: 'deb https://deb.nodesource.com/node_6.x trusty main'
+        state: present
+
+    - name: Install Node.js
+      apt: pkg=nodejs state=installed update_cache=yes
+
+    - name: Fetch MongoDB Repository keys
+      become: yes
+      apt_key: 
+        keyserver: keyserver.ubuntu.com
+        id: 7F0CEB10
+
+    - name: Add MongoDB repository to repo list
+      become: yes
+      apt_repository: 
+        repo: 'deb http://repo.mongodb.org/apt/ubuntu {{ansible_distribution_release}}/mongodb-org/3.0 multiverse' 
+        state: present
+
+    - name: Install MongoDB
+      become: yes
+      apt: 
+        name: mongodb-org 
+        state: present 
+        update_cache: true 
+        cache_valid_time: 600
+
+    - name: Install mongodb dependency pymongo
+      become: yes
+      pip:
+        name: pymongo
+        state: present
+
+    - name: Copy nginx.conf
+      become: yes
+      copy:
+        src: /home/checkboxio/local-conf/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        remote_src: yes
+
+    - name: Add new root directory in default site config
+      replace:
+        path:  /home/checkboxio/local-conf/default
+        regexp: '\/Users\/gameweld\/bitbucket\/checkbox.io\/checkbox.io'
+        replace: '/home/checkboxio'
+
+    - name: Copy default conf
+      become: yes
+      copy:
+        src: /home/checkboxio/local-conf/default
+        dest: /etc/nginx/sites-available/default
+        remote_src: yes
+
+    - name: adding mongodb user
+      mongodb_user:
+        database: admin
+        name: admin
+        password: admin
+        roles: readWriteAnyDatabase,dbAdminAnyDatabase,userAdminAnyDatabase
+        state: present
+
+    - name: Change mongo config to enable authorization
+      become: yes
+      blockinfile:
+        dest: "/etc/mongod.conf"
+        content: 
+           "security:\n  authorization: enabled"
+
+    - name: Restart mongodb
+      become: yes
+      service:
+        name: mongod
+        state: restarted 
+
+    - name: Install checkbox.io packages based on package.json
+      npm:
+        path: /home/checkboxio/server-side/site
+
+    - name: Installing toobusy-js
+      npm:
+        name: toobusy-js
+        path: /home/checkboxio/server-side/site
+        state: present
+
+    - name: Installing forever.js
+      npm:
+        name: forever
+        global: yes
+        state: present
+
+    - name: link nodejs and nodejs
+      shell: ln -s "$(which nodejs)" /usr/local/bin/node
+
+    - name: Run checkboxio app w/ forever start
+      shell: "( export MONGO_PORT=3002 && export MONGO_IP=127.0.0.1 && export MONGO_USER=admin && export MONGO_PASSWORD=admin && forever start --watch server.js)"
+      args:
+        chdir: /home/checkboxio/server-side/site/
+      async: 10
+      poll: 0
+
+    - name: Restart nginx
+      become: yes
+      service:
+        name: nginx
+        state: restarted

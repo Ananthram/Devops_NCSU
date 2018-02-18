@@ -1,0 +1,90 @@
+---
+- hosts: nodes
+
+  tasks:
+    - name: install dopy
+      shell: "pip install 'dopy>=0.3.5,<=0.3.5'"
+
+    - name: install six
+      pip:
+        name: six
+
+    - name: check if sshkey exists
+      become: true
+      stat: 
+        path: /root/.ssh/id_rsa.pub
+      register: ssh_exists
+
+    # - name: debug ssh key
+    #   debug:
+    #     msg: "{{ ssh_exists }}"
+
+    - name: Generate SSH keys if not exists
+      become: yes
+      shell: ssh-keygen -N '' -f /root/.ssh/id_rsa
+      when: ssh_exists.stat.exists == False
+
+    - name: get ssh-keygen
+      shell: cat /root/.ssh/id_rsa.pub
+      register: ssh_key
+      tags:
+        - test
+        
+    - debug:
+        msg: "{{ ssh_key.stdout }}"
+
+    - set_fact:
+        DOTOKEN: "{{ lookup('env','DOTOKEN') }}"
+      tags:
+        - test
+
+    - digital_ocean:
+        state: present
+        command: ssh
+        name: jenkins_key
+        ssh_pub_key: "{{ ssh_key.stdout }}"
+        api_token: "{{ DOTOKEN }}"
+      register: new_key
+      tags:
+        - test
+
+    - debug:
+        msg: "{{ new_key.ssh_key.id }}"
+
+    - name: make sure file to copy id to jenkins machine is absent
+      file:
+        path: /root/.ssh/do_id
+        state: absent
+      tags:
+        - test
+
+    - name: make sure file to copy id to jenkins machine exists
+      file:
+        path: /root/.ssh/do_id
+        state: touch
+        mode: 0777
+      tags:
+        - test
+
+    - name: copy id into file
+      lineinfile:
+        path: /root/.ssh/do_id
+        line: "{{ new_key.ssh_key.id }}"
+      tags:
+        - test
+
+    - name: make sure file to copy token to jenkins machine is absent
+      file:
+        path: /home/DOTOKEN
+        state: absent
+
+    - name: make sure file to copy token to jenkins machine exists
+      file:
+        path: /home/DOTOKEN
+        state: touch
+        mode: 0777
+
+    - name: copy token into file
+      lineinfile:
+        path: /home/DOTOKEN
+        line: "{{ DOTOKEN }}"

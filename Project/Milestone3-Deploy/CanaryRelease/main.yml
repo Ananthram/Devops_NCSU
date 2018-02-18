@@ -1,0 +1,7 @@
+#This will setup jenkins server with checkbox io jobs for stable and canary
+#This will also send over all appropriate ansible scripts to create droplets and set them up
+---
+- include: install_jenkins.yml
+- include: setupSSHJenkins.yml
+- include: ansibleSetupOnJenkins.yml
+

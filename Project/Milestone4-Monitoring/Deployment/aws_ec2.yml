@@ -1,0 +1,240 @@
+---
+
+- name: Create a sandbox instance
+  hosts: localhost
+  connection: local
+  #ansible_python_interpreter: python
+  #gather_facts: False
+
+  # vars:
+  #   key_name: my_keypair
+  #   instance_type: m1.small
+  #   security_group: my_securitygroup
+  #   image: my_ami_id
+  #   region: us-east-1
+
+  environment:
+    #PATH: ~/.local/bin:{{ ansible_env.PATH }}
+    PATH: "{{ ansible_env.PATH }}:~/.local/bin"
+
+  pre_tasks:
+    - include_vars: iTrustVars.yml
+
+  tasks:
+    - name: Update repositories cache and install pip package
+      apt:
+        name: python-pip
+        #upgrade: dist
+        update_cache: yes
+      become: true
+
+    - name: pip install awscli --user --upgrade
+      pip:
+       name: boto
+      become: true
+
+    - name: pip install awscli --user --upgrade
+      pip:
+       name: awscli
+       extra_args: --user --upgrade
+
+    # - name: Checks if the environment file already has an entry for the PATH
+    #   replace: dest=~/.profile regexp="PATH=(.*)" replace="PATH=\1"
+    #   register: checkIfPATHIsHere
+    #
+    # - name: Add a PATH entry with {{extrapath}} if the PATH is not already defined
+    #   lineinfile: dest=~/.profile state=present line="PATH={{aws_cli_path}}" regexp='' insertafter=EOF
+    #   when: checkIfPATHIsHere.changed == false
+    #
+    # - name: add {{extrapath}} to the PATH
+    #   lineinfile: dest=~/.profile state=present backrefs=no regexp="PATH=(["])((?!.?{{aws_cli_path}}).?)(["])$" line="PATH=\1\2:{{extra_path}}\3"
+    #   when: checkIfPATHIsHere.changed
+
+
+    - name: Launch Webservers
+      ec2:
+         key_name: "{{ ec2_keypair }}" #"{{ lookup('env','aws_access_key_id') }}"
+         group: "{{ ec2_security_group }}"
+         instance_type: "{{ ec2_instance_type }}"
+         image: "{{ ec2_image }}"
+         wait: true
+         region: "{{ ec2_region }}"
+         vpc_subnet_id: "{{ ec2_subnet_ids|random }}"
+         instance_tags: '{"Name":"Webserver","Type":"iTrust"}'
+         assign_public_ip: yes
+         exact_count: "{{ec2_instance_count}}"
+         count_tag:
+           Name: "Webserver"
+           Type: "iTrust"
+         volumes:
+           - device_name: /dev/sda1
+             device_type: gp2
+             volume_size: 10
+             delete_on_termination: true
+      register: iTrust_WS #WebServers
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}" #"{{ item.private_ip }}"
+        groupname: iTrust_webservers
+        backend_name: "{{item.private_dns_name}}"
+      with_items: "{{ iTrust_WS.tagged_instances }}"
+
+
+    - debug: var=iTrust_WS  #msg="{{ ansible_env.PATH }}"
+
+
+    - name: Launch Load Balancer
+      ec2:
+         key_name: "{{ ec2_keypair }}" #"{{ lookup('env','aws_access_key_id') }}"
+         group: "{{ ec2_security_group }}"
+         instance_type: "{{ ec2_instance_type }}"
+         image: "{{ ec2_image }}"
+         wait: true
+         region: "{{ ec2_region }}"
+         vpc_subnet_id: "{{ ec2_subnet_ids|random }}"
+         instance_tags: '{"Name":"LB","Type":"iTrust"}'
+         assign_public_ip: yes
+         exact_count: 1
+         count_tag:
+           Name: "LB"
+           Type: "iTrust"
+         volumes:
+           - device_name: /dev/sda1
+             device_type: gp2
+             volume_size: 10
+             delete_on_termination: true
+      register: iTrust_LB #WebServers
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: iTrust_loadbalancer
+      with_items: "{{ iTrust_LB.tagged_instances }}"
+
+
+    - name: Launch DB Server
+      ec2:
+         key_name: "{{ ec2_keypair }}" #"{{ lookup('env','aws_access_key_id') }}"
+         group: "{{ ec2_security_group }}"
+         instance_type: "{{ ec2_instance_type }}"
+         image: "{{ ec2_image }}"
+         wait: true
+         region: "{{ ec2_region }}"
+         vpc_subnet_id: "{{ ec2_subnet_ids|random }}"
+         instance_tags: '{"Name":"Database","Type":"iTrust"}'
+         assign_public_ip: yes
+         exact_count: 1
+         count_tag:
+           Name: "Database"
+           Type: "iTrust"
+         volumes:
+           - device_name: /dev/sda1
+             device_type: gp2
+             volume_size: 10
+             delete_on_termination: true
+      register: iTrust_DS #WebServers
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: iTrust_Database
+      with_items: "{{ iTrust_DS.tagged_instances }}"
+
+
+    - debug: var=iTrust_DS
+
+    - set_fact:
+        db_private_ip: "{{ item.private_ip }}"
+      with_items:  "{{ iTrust_DS.tagged_instances }}"
+
+
+    - set_fact:
+        lb_public_ip: "{{ item.public_ip }}"
+      with_items:  "{{ iTrust_LB.tagged_instances }}"
+
+    - set_fact:
+        ws_tagged_instances: "{{ iTrust_WS.tagged_instances }}"
+
+
+    - debug: var=db_private_ip
+
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 2
+        timeout: 320
+        state: started
+      with_items:
+        - "{{ iTrust_WS.tagged_instances }}"
+        - "{{ iTrust_DS.tagged_instances }}"
+        - "{{ iTrust_LB.tagged_instances }}"
+
+
+
+- name: Configure LoadBalancer
+  hosts: iTrust_loadbalancer
+  #become: True
+  gather_facts: False
+
+  pre_tasks:
+
+    - raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+      become: yes
+
+    - debug: var="{{hostvars['localhost']['ws_tagged_instances']}}"
+
+  roles:
+    - {role: haproxy, lb_public_ip: "{{hostvars['localhost']['lb_public_ip']}}", ws_instances: "{{hostvars['localhost']['ws_tagged_instances']}}" }
+    - {role: Monitoring, device_name: "newrelic-infra.yml.lb.j2" }
+
+
+- name: Configure DB instance
+  hosts: iTrust_Database
+  gather_facts: False
+  become: yes
+  pre_tasks:
+    - raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+      become: yes
+  roles:
+    #- python
+    - mysql
+    - {role: Monitoring, device_name: "newrelic-infra.yml.db.j2" }
+
+- name: Configure Webservers
+  hosts: iTrust_webservers
+  serial: 1
+  #become: True
+  gather_facts: False
+
+  pre_tasks:
+
+    - raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+      become: yes
+
+      #For rolling update
+    - debug: var=hostvars["{{inventory_hostname}}"]
+    #- set_fact:
+        #backend_name: hostvars["{{inventory_hostname}}"].
+
+    - name: disable server in haproxy
+      shell: echo "disable server app_backend/{{ hostvars[inventory_hostname].backend_name }} " | socat stdio /var/lib/haproxy/stats
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['iTrust_loadbalancer'] }}"
+      become_user: root
+      become: yes
+
+  roles:
+    - {role: deploy_iTrust, ds: "{{hostvars['localhost']['db_private_ip']}}" }
+    - {role: Monitoring, device_name: "newrelic-infra.yml.web.j2" }
+
+  post_tasks:
+
+    - name: enable server in haproxy
+      shell: echo "enable server app_backend/{{ hostvars[inventory_hostname].backend_name }} " | socat stdio /var/lib/haproxy/stats
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['iTrust_loadbalancer'] }}"
+      become_user: root
+      become: yes

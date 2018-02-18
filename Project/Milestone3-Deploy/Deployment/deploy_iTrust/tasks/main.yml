@@ -1,0 +1,107 @@
+---
+
+# - hosts: iTrust_webservers
+#   become: yes
+
+  - setup:
+    register: facts
+
+  - debug: var=facts
+
+  - name: Install git using apt
+    become: yes
+    apt:
+      name: git
+      update_cache: true
+
+  #Install Java and Maven
+  - name: Install add-apt-repostory
+    become: yes
+    apt: name=software-properties-common state=latest
+
+  - name: Adding Java ppa
+    apt_repository:
+      repo: ppa:webupd8team/java
+      state: present
+    become: yes
+
+  - name: Accept Oracle java 8 license
+    debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+    become: yes
+
+  - name: Install Oracle Java 8
+    become: yes
+    apt: name={{item}} state=latest
+    with_items:
+      - oracle-java8-installer
+      - ca-certificates
+      - oracle-java8-set-default
+      - maven
+
+  - stat:
+      path: /home/{{ansible_ssh_user}}/iTrust/development/apache-tomcat-9.0.0.M26/bin/startup.sh
+    register: st
+    become: yes
+
+  - debug: var=st
+
+  - name: Create directory ~/iTrust/development
+    file:
+      path: ~/iTrust/development
+      state: directory
+      mode: 0755
+
+  - name: Extract Tomcat tar to ~/iTrust/development
+    unarchive:
+      #src: /home/{{ansible_ssh_user}}/iTrust/apache-tomcat-9.0.0.M26.tar.gz
+      src: "http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.0.M26/bin/apache-tomcat-9.0.0.M26.tar.gz"
+      dest: /home/{{ansible_ssh_user}}/iTrust/development
+      #remote_src: yes
+      copy: false
+      owner: "{{ansible_ssh_user}}"
+      mode: 0777 #!!!!!!!!NEED TO FOLLOW BEST PRACTICE FILE PERMISSIONS FOR PRODUCTION
+    become: yes
+    when: st.stat.exists == False
+
+  - name: Extract mysql-connector-java-5 tar to ~/iTrust/development
+    unarchive:
+      #src: /home/{{ansible_ssh_user}}/iTrust/mysql-connector-java-5.1.44.tar.gz
+      src: "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.44.tar.gz"
+      dest: /home/{{ansible_ssh_user}}/iTrust/development
+      #remote_src: yes
+      copy: false
+    become: yes
+    when: st.stat.exists == False
+
+  - name: start Tomcat
+    become: yes
+    shell: "nohup /home/{{ansible_ssh_user}}/iTrust/development/apache-tomcat-9.0.0.M26/bin/startup.sh"
+
+
+  - name: clone the repo
+    git:
+      repo: "https://github.com/Ananthram/iTrust-v23.git"
+      dest: "/home/{{ansible_ssh_user}}/iTrustSource/"
+      clone: yes
+      update: yes
+      force: yes
+
+  - debug: var=ds
+
+  - name: Update iTrust-v23/iTrust/WebRoot/META-INF/context.xml to point to DB running outside (not localhost)
+    become: yes
+    lineinfile:
+      dest: /home/{{ansible_ssh_user}}/iTrustSource/iTrust/WebRoot/META-INF/context.xml
+      regexp: "\turl=\"jdbc:mysql://localhost:3306"
+      line: "url=\"jdbc:mysql://{{ds}}:3306/itrust?createDatabaseIfNotExist=true\""
+
+
+  - name: run maven to package the application
+    shell: "cd /home/{{ansible_ssh_user}}/iTrustSource/iTrust; mvn package -DskipTests"
+
+  - name: copy packaged war file to tomcat folder
+    become: yes
+    copy:
+      src: "/home/{{ansible_ssh_user}}/iTrustSource/iTrust/target/iTrust-23.0.0.war"
+      dest: "/home/{{ansible_ssh_user}}/iTrust/development/apache-tomcat-9.0.0.M26/webapps/iTrust.war"
+      remote_src: yes

@@ -1,0 +1,6 @@
+---
+ mysql_client_password: ""
+ mysql_client_port: 3306
+ mysql_server_port: 3306
+ mysql_client_user: "root"
+ mysql_server_user: "mysql"

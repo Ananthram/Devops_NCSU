@@ -1,0 +1,14 @@
+control ansible_host=104.131.110.161 ansible_user=root ansible_ssh_private_key_file=~/.ssh/ocean
+
+[nodes]
+nomad1 nomad_node_role=server nomad_iface=eth0 consul_node_role=bootstrap consul_iface=eth0 consul_client_address=104.131.50.145 ansible_host=104.131.50.145 ansible_user=root ansible_ssh_private_key_file=./ocean
+nomad2 nomad_node_role=client nomad_iface=eth0 consul_node_role=client consul_iface=eth0 consul_client_address=104.131.114.21 ansible_host=104.131.114.21 ansible_user=root ansible_ssh_private_key_file=./ocean
+nomad3 nomad_node_role=client nomad_iface=eth0 consul_node_role=client consul_iface=eth0 consul_client_address=104.131.167.70 ansible_host=104.131.167.70 ansible_user=root ansible_ssh_private_key_file=./ocean
+
+[nomad_instances]
+[nomad_instances:children]
+nodes
+
+[consul_instances]
+[consul_instances:children]
+nodes

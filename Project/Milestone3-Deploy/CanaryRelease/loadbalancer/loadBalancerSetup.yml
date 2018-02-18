@@ -1,0 +1,74 @@
+---
+#http://docs.ansible.com/ansible/latest/intro_configuration.html#ask-pass
+#THIS IS THE LOAD BALANCER/PROXY ANSIBLE SCRIPT SETUP SCRIPT
+
+- hosts: all
+  gather_facts: no
+
+  pre_tasks:
+    - name: Install Python
+      raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+
+    - name: Turn on gather_facts
+      setup: 
+
+  tasks:
+    # Found here to get latest node version https://stackoverflow.com/questions/44334518/ansible-force-installing-latest-nodejs-package
+    - name: Ensure apt-transport-https is installed.
+      apt: name=apt-transport-https state=present
+
+    - name: Add Nodesource apt key.
+      apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280
+        id: "68576280"
+        state: present
+
+    - name: Add NodeSource repositories for Node.js.
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      with_items:
+        - "deb https://deb.nodesource.com/node_6.x trusty main"
+      register: node_repo
+
+    - name: Update apt cache if repo was added.
+      apt: update_cache=yes
+      when: node_repo.changed
+
+    - name: Ensure Node.js and npm are installed.
+      apt: "name=nodejs=6* state=present"
+
+    - name: move proxy/load balancer over
+      copy:
+        src: infrastructure.js
+        dest: /home/infrastructure.js
+
+    - name: move proxy/load balancer package.json
+      copy:
+        src: package.json
+        dest: /home/package.json
+
+    - name: Install loadbalancer packages based on package.json
+      npm:
+        path: /home/
+
+    - name: Installing heartbeats.js for loadbalancer
+      npm:
+        name: heartbeats
+        path: /home/
+        state: present
+
+    - name: Installing forever for loadbalancer
+      npm:
+        name: forever
+        global: yes
+        state: present
+
+    - name: Run load balancer
+      shell: "forever start infrastructure.js"
+      args:
+        chdir: /home/
+      async: 10
+      poll: 0
+      tags:
+        - run

@@ -1,0 +1,5 @@
+---
+- include: bootstrap-cluster.yml
+- include: install-nomad.yml
+- include: stableSetup.yml
+- include: configure_redis.yml

@@ -1,0 +1,85 @@
+---
+- hosts: localhost
+
+  tasks:
+    - name: get ssh-keygen
+      become: yes
+      shell: cat /root/.ssh/id_rsa.pub
+      register: ssh_key
+
+    - name: get DOTOKEN
+      become: yes
+      shell: cat /home/DOTOKEN
+      register: DOTOKEN
+
+    # - name: get dropletID if exists
+    #   become: yes
+    #   shell: cat /home/checkboxStable/dropletID
+    #   register: dropletID
+
+    # #delete droplet first
+    # - name: create/rebuild new stable droplet
+    #   digital_ocean:
+    #     state: deleted
+    #     command: droplet
+    #     id: "{{ dropletID }}"
+    #     name: stable
+    #     size_id: 512mb
+    #     region_id: nyc1
+    #     image_id: ubuntu-14-04-x64
+    #     wait_timeout: 500
+    #     ssh_key_ids: "{{ ssh_key.stdout }}"
+    #     api_token: "{{ DOTOKEN }}"
+    #   #when: "dropletID.stdout == ''"
+
+
+    - name: create new stable droplet
+      digital_ocean:
+        state: present
+        command: droplet
+        name: stable
+        size_id: 512mb
+        region_id: nyc1
+        image_id: ubuntu-14-04-x64
+        wait_timeout: 500
+        ssh_key_ids: "{{ ssh_key.stdout }}"
+        api_token: "{{ DOTOKEN }}"
+      register: new_droplet
+
+    - name: delete dropletID file
+      file:
+        path: /home/checkboxStable/dropletID
+        state: absent
+
+    - name: make dropletID file present
+      file:
+        path: /home/checkboxStable/dropletID
+        state: present
+        mode: 0777
+
+    - name: set dropletID file
+      lineinfile:
+        path: /home/checkboxStable/dropletID
+        line: "{{ new_droplet.droplet.id }}"
+
+    - name: make inventory file absent
+      file:
+        path: /home/checkboxStable/stableInventory
+        state: absent
+
+    - name: make inventory file present
+      file:
+        path: /home/checkboxStable/stableInventory
+        state: present
+        mode: 0777
+
+    - name: set inventory file
+      lineinfile:
+        path: /home/checkboxStable/stableInventory
+        line: "[nodes]\n{{ new_droplet.droplet.ip_address }} ansible_ssh_user=root"
+
+    - debug:
+        msg: "stable IP: {{ new_droplet.droplet.ip_address }}"
+
+    - pause:
+        seconds: 30

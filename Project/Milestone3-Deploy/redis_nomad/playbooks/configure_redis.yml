@@ -1,0 +1,31 @@
+---
+
+- hosts: nodes
+  gather_facts: no
+  tasks:
+
+  - name: Copy redis master conf
+    copy: src={{ item.src }} dest={{ item.dest }} mode=777
+    with_items:
+    - src:  templates/redis_master.conf
+      dest: /etc/redis/redis.conf
+    when: inventory_hostname == "nomad1"
+
+  - name: Copy redis slave conf
+    copy: src={{ item.src }} dest={{ item.dest }} mode=777
+    with_items:
+    - src:  templates/redis_slave.conf
+      dest: /etc/redis/redis.conf
+    when: inventory_hostname != "nomad1"
+
+  - name: Add master redis ip
+    lineinfile:
+      path: /etc/redis/redis.conf
+      line: 'slaveof {{ hostvars["nomad1"].ansible_host }} 6379'
+    when: inventory_hostname != "nomad1"
+
+  - name: Restart redis-server
+    become: yes
+    service:
+      name: redis-server
+      state: restarted
