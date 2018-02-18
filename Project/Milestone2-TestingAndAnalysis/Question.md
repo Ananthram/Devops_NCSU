@@ -1,39 +1,39 @@
 MILESTONE: TEST+ANALYSIS
 ------------------------
 
-In creating your pipeline, you need a **testing component** and **analysis component** that ensures the correctness of a commit.
+You will continue to work with checkbox.io and iTrust.
 
-### Properties
+Testing Component
+Extend the build definitions for iTrust to include the ability to run its test suite, measure coverage, and report the results.
 
-The testing and analysis components must support the following properties.
+You now need to have jenkins have tomcat + mysql in order to properly run the unit + integration tests.
 
-* **Test Suites**: The ability to run unit tests, measure coverage, and report the results.
+Automated Commit Generation - Commit Fuzzer
+Develop a tool that automatically commits new random changes to source code which will trigger a build and run of the test suite.
 
-* **Advanced Testing**: Implement one of the following advanced testing techniques: test priorization, test case generation, fuzzing, or flaky test quarantine.
+Support the following fuzzing operations:
 
-* **Basic Analysis** The ability to run an existing static analysis tool on the source code (e.g. FindBugs, PMD, CheckStyle, NCover, Lint, etc.), process its results, and report its findings.
+change content of "strings" in code.
+swap "<" with ">"
+swap "==" with "!="
+swap 0 with 1
+any operation you can think of.
+To support the commit fuzzer, create a new branch for iTrust, called fuzzer. Create a corresponding jenkins job which enables you to run the test suite against this branch. Finally, you will need to handle rollback (reverting the commit/reseting to head in git) after submitting to jenkins. Create a ansible playbook that can help you run the fuzzer.
 
-* **Custom Metrics**: The ability to implement your own custom source metrics.
+Using your automated commit fuzzer, generate 100 random commits (that still compile) and test runs. Warning, in order to do this you must have a working fuzzer well ahead of the deadline.
 
-   * Max condition: Count the max number of conditions within an if statement in a function.
-   * Long method: Detect a long methods.
-   * Free-style: Implement any analysis, such as security-token detection.
-   * BONUS (10 points): Detect duplicate code using an AST-based difference algorithm.
+Useless test detector
+Write a "useless" test detector that will analyze the results of the 100 commit fuzzer runs and test cases. A useless test is one that never fails in after all fuzzed commits. You can extend the workshop we used for analyzing test case results. Generate a report that displays tests cases that always pass.
 
-* **Gates**  Using hooks or post-build scripts, have the ability to reject a commit if it fails a minimum testing criteria (e.g. failed test case, or less than 50% statement coverage) and analysis criteria (e.g. cannot commits that generate a particular FindBugs rule, such as "Method concatenates strings using + in a loop").
+To get full credit for test detector+fuzzer, you must detect at least 100 useless tests.
 
-* System under test: You must find an open source project with a test suite to run through your pipeline for evaluation.
+Analysis Component
+Using esprima's ast parser and visitor pattern, create an analysis tool that runs on checkbox.io's server-side code (not front-end) and implements the following detections. Using regex will result in 0 credit.
 
-## Submission
+Long method: Detect any long methods (greater than 120 lines of code).
+Sync calls: Detect any function that has more than one *Sync method call: e.g. readFileSync.
+Message chains: Detect message chains with length greater than 3 in a function. For example, consider this statement as having message chain of length 4: foo.hello.get(call.size).length.
+The Big O. Detect any method with a big O greater than 3.
+Provide a report of the detected items in a seperate markdown file in your project submission.
 
-Submit the following:
-
-* your code and configuration files,
-* a README.md, with a \#\#\# Test section describing your testing setup and a \#\#\# Analysis section describing your base and extended analysis.
-* Test cases/scripts/screenshots that demonstrate each capability.
-* A screencast describing a complete end-to-end demo of I) a commit passing test and analysis II) a commit failing test or analysis and being rejected.
-
-
-### Resources
-
-* https://code.google.com/p/findbugs/wiki/DetectorPluginTutorial
+Finally, ensure to fail the build if any of these results occur.
