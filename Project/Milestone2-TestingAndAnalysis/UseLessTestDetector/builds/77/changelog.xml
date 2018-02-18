@@ -1,0 +1,20 @@
+commit 04e8e9a283b8c39e1277f4acea7859fdd971ec17
+tree 3e7e65a4a2fecc35a09be81737337b43308f3887
+parent f70d154ff5e789b26724685083fd56d4a1d40d35
+author Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:37 -0400
+committer Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:37 -0400
+
+     fuzzed code, Iteration 76
+
+
+
+:100644 100644 cc1140a93a79dba7c4102186bd6b1c9c263c4610 908adb5027da8c743b15252307cbc85dd2ab7689 M	iTrust/src/main/edu/ncsu/csc/itrust/HtmlEncoder.java
+:100644 100644 d39303067d969361c6e2cd985ce6e5d2520d2f7b 1936c29ad0dbd5171d6d338fe86e6ae841ff13d2 M	iTrust/src/main/edu/ncsu/csc/itrust/action/RequestRecordsReleaseAction.java
+:100644 100644 4e467a460fc161093fe3ffb5b36dc0d318b8584e 2c0f5c44323dc331d65b540d108e6e512677d866 M	iTrust/src/main/edu/ncsu/csc/itrust/action/UpdateNDCodeListAction.java
+:100644 100644 3eee2bd395fe0a1836b13e07e1f07749a9d16d15 10eb7184b85fb8ba150bc65191b7adf2dc303a44 M	iTrust/src/main/edu/ncsu/csc/itrust/action/ViewApptRequestsAction.java
+:100644 100644 b0a22b6a967420308ef6bb83821a0f3448cc5c8c 1f14266246cdc11d4ec3939cf8a03006e3cd6567 M	iTrust/src/main/edu/ncsu/csc/itrust/action/ViewMyRemoteMonitoringListAction.java
+:100644 100644 197fa24a381e0f39abb3963c6d729fae6b9c0df9 52b248d62c9a503d7a3ad631c35b6725e7030ac1 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/hospital/HospitalController.java
+:100644 100644 c4dc9da048a9a64bb43c9cef6dfd09876ea57f34 b9b4851d8ed4f43ee36a59cfce260c6dc9efc8b6 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/immunization/ImmunizationController.java
+:100644 100644 7ba162a613a89237b6097b8e85ffd02cb0adff8d b969fd697335df937ed6e27c400a44bf77c6380c M	iTrust/src/main/edu/ncsu/csc/itrust/report/DemographicReportFilter.java
+:100644 100644 5a499e0b19ef5effb1d5f14f22210d8394e0e07c 694e58dd734275fff9a132958a85807b2d899d42 M	iTrust/src/main/edu/ncsu/csc/itrust/report/PersonnelReportFilter.java
+:100644 100644 cbbc22301cfa3f264221ea27437d0d4c03c5cbc9 ce322a98c6cb447aea01c600f368bf69b62f207d M	iTrust/src/main/edu/ncsu/csc/itrust/server/WardRoomCRUDServlet.java

@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+
+  tasks:
+    # fuzzer.js must be in iTrust-v23 directory to run properly
+    - name: run fuzzer on iTrust
+      raw: node fuzzer.js

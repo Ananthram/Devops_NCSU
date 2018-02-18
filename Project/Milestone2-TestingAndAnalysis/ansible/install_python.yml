@@ -1,0 +1,16 @@
+---
+- hosts: nodes
+  gather_facts: no
+
+  # Installs python if it is missing.
+  tasks:
+    - name: install python 2
+      raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+
+    - name: wait for SSH to respond on all hosts
+      wait_for:
+        port: 22
+        timeout: 100
+
+    - name: gather facts
+      setup:

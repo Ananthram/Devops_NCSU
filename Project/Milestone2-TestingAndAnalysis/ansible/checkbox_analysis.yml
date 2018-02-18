@@ -1,0 +1,55 @@
+---
+- hosts: nodes
+  
+  tasks:
+
+    - name: Install Node js and npm package and ansible
+      become: yes
+      apt:
+        update_cache: yes
+        pkg: "{{item}}"
+        state: present
+      with_items:
+        - nodejs
+        - npm
+        - nodejs-legacy
+
+    - name: NPM stuff
+      become: yes
+      shell: npm cache clean -f
+
+    - name: NPM stuff
+      become: yes
+      shell: npm install -g n
+
+    - name: NPM stuff
+      become: yes
+      shell: n stable
+
+    - name: NPM stuff
+      become: yes
+      shell: ln -sf /usr/local/n/versions/node/8.7.0/bin/node /usr/bin/nodejs
+
+    - name: NPM stuff
+      become: yes
+      shell: n latest
+
+    - name: Clone analysis code
+      git:
+        repo: 'https://github.com/CSC-DevOps/Complexity.git'
+        dest: /home/vagrant/Complexity
+
+    - name: Copy analysis.js
+      become: yes
+      copy:
+        src: ../Complexity/analysis.js
+        dest: /home/vagrant/Complexity
+        mode: 0777
+
+    - name: Install analysis npm packages
+      npm:
+        path: /home/vagrant/Complexity
+    
+    - name: Install useless npm packages
+      npm:
+        path: /home/vagrant/

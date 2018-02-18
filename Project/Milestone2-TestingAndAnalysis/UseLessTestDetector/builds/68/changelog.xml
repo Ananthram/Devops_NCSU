@@ -1,0 +1,21 @@
+commit 6d1722b29ac43001a4ecca4952e0d3d49e562e0b
+tree 692567de7ea160ca0329760dc0c8db823faf7082
+parent 68b4b927637d388989125499e2a6594d52873b74
+author Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:13 -0400
+committer Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:13 -0400
+
+     fuzzed code, Iteration 67
+
+
+
+:100644 100644 c75fb999c94d19e9fede396c9083a1a82c21f3a1 45fc1f6910b8b2e3a6922b0e26a243943a1c335f M	iTrust/src/main/edu/ncsu/csc/itrust/action/ActivityFeedAction.java
+:100644 100644 7b3d881fd032a70b8af790f2219b059ade613c91 c1d9aa0879b4915561561d62c89763ba0377e6a4 M	iTrust/src/main/edu/ncsu/csc/itrust/action/AddPatientFileAction.java
+:100644 100644 8f49bfa046d060c0364b5cc63506a125f0b71218 4eb939cccb9a7527231e7c74b9e0f37313dcc9ec M	iTrust/src/main/edu/ncsu/csc/itrust/action/LoginFailureAction.java
+:100644 100644 4692b5954f84ab01c79816cc26d23631dc946cb6 2a035516890e43a75300dd763af100fd6edc7152 M	iTrust/src/main/edu/ncsu/csc/itrust/action/PayBillAction.java
+:100644 100644 2e872e8fefa49e1407b4d7750b065271b4b2b26f c5a685a8e998ce89d470e0b52c4ddcae0f7aec56 M	iTrust/src/main/edu/ncsu/csc/itrust/action/SearchUsersAction.java
+:100644 100644 6f539b2bbd10944055a3d278d41cf9864d306631 1b8f25a4d6ddcf74d96ae4cd09dd69ca6c5b2c32 M	iTrust/src/main/edu/ncsu/csc/itrust/action/ViewMyRecordsAction.java
+:100644 100644 3ff17bcd23c39d564890a6f16ca9f038997a8584 11ad7cb8033cef5a5f0755bd3b386a96e066e314 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/medicalProcedure/MedicalProcedureForm.java
+:100644 100644 c9b5cd885a0f9e5a3b086e752f5e2c0ee365aaf3 167d2140b0eefc1fb5f55c4e79f3b18e6d7c40c9 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/prescription/PrescriptionForm.java
+:100644 100644 116244a407a0ff99a529677ae06fca567e4b9819 e63bb7abb9a32a54c9d6fd12838340789add9507 M	iTrust/src/main/edu/ncsu/csc/itrust/logger/TransactionLogger.java
+:100644 100644 62e780c7235faec310b65e135a352514c71731a0 694e58dd734275fff9a132958a85807b2d899d42 M	iTrust/src/main/edu/ncsu/csc/itrust/report/PersonnelReportFilter.java
+:100644 100644 1ed201f7714cebc68faeb8f6168d98e9deebd9d5 926ddba94d0222d410d0b12a8474f3a0aa0f2974 M	iTrust/src/main/edu/ncsu/csc/itrust/server/RecordsReleaseServlet.java

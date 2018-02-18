@@ -1,0 +1,156 @@
+---
+#http://docs.ansible.com/ansible/latest/intro_configuration.html#ask-pass
+
+- hosts: all
+  gather_facts: no
+  #become: yes
+
+  vars:
+    oracle_java_version: 8
+    oracle_java_home: "/usr/lib/jvm/java-{{ oracle_java_version }}-oracle"
+    mysql_root_password: ""
+
+  tasks:
+
+  # - debug:
+  #     var: catch
+  #
+  # - name: Adding Java ppa
+  #   apt_repository:
+  #     repo: ppa:webupd8team/java
+  #     state: present
+  #   become: yes
+  #
+  #
+  # # - name: determine if Java is already installed
+  # #   shell: java -version
+  # #   register: oracle_java_task_installed
+  #
+  #
+  # - name: Accept Java license
+  #   debconf: name='oracle-java{{ oracle_java_version }}-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+  #   become: yes
+  #
+  # - name: Install Java {{ oracle_java_version }} and set it as default version
+  #   apt:
+  #     name: oracle-java{{ oracle_java_version }}-installer
+  #     state: latest
+  #     cache_valid_time: 3600
+  #     update_cache: yes
+  #   become: yes
+  #
+  # - name: set Java {{ oracle_java_version }} as default version
+  #   apt:
+  #     name: oracle-java{{ oracle_java_version }}-set-default
+  #     state: latest
+  #     update_cache: yes
+  #   become: yes
+  - name: Create a development directroy to unpack iTrust dependencies
+    file:
+      path: /home/{{ansible_ssh_user}}/iTrust/development
+      state: directory
+    become: yes
+
+  - name: download maven
+    apt:
+      name: maven
+      state: latest
+      update_cache: yes
+    become: yes
+
+  - name: Install required system packages.
+    apt: pkg={{ item }} state=present update-cache=yes
+    with_items:
+     - mysql-server
+     - mysql-client
+    become: yes
+
+  - name: ensure mysql is running and starts on boot
+    service: name=mysql state=started enabled=true
+
+  - name: Install the Python MySQLB module
+    pip: name=MySQL-python
+    become: yes
+
+  - name: update mysql root password for root accounts
+    become: yes
+    mysql_user:
+      name: root
+      host: localhost
+      password: "{{ mysql_root_password }}"
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      check_implicit_admin: yes
+      state: present
+
+  - name: copy .my.cnf file with root password credentials
+    template: src=my.cnf dest=/etc/mysql/my.cnf owner={{ansible_user}} mode=0644
+    become: yes
+
+  - name: update mysql root password for ALL root accounts
+    become: yes
+    mysql_user:
+     name: root
+     host: "{{ item }}"
+     password: "{{ mysql_root_password }}"
+     login_user: root
+     login_password: "{{ mysql_root_password }}"
+     check_implicit_admin: yes
+    with_items:
+     - localhost
+     - ::1
+
+  - name: remove the test database
+    mysql_db: name=test state=absent
+    become: yes
+
+  - name: Restarting mysql service
+    service: name=mysql state=restarted
+    become: yes
+
+  # - name: Download Tomcat tar and verify checksum
+  #   get_url:
+  #     url: http://apache.mirrors.hoobly.com/tomcat/tomcat-9/v9.0.0.M26/bin/apache-tomcat-9.0.0.M26.tar.gz
+  #     dest: /home/{{ansible_ssh_user}}/iTrust
+  #     checksum: md5:18519f06baf82cce78bc2afc54dd585d
+  #   become: yes
+
+  - name: Extract Tomcat tar to ~/iTrust/development
+    unarchive:
+      #src: /home/{{ansible_ssh_user}}/iTrust/apache-tomcat-9.0.0.M26.tar.gz
+      src: "http://apache.cs.utah.edu/tomcat/tomcat-9/v9.0.1/bin/apache-tomcat-9.0.1.tar.gz"
+      dest: /home/{{ansible_ssh_user}}/iTrust/development
+      #remote_src: yes
+      copy: false
+    become: yes
+
+
+
+  - name: Extract mysql-connector-java-5 tar to ~/iTrust/development
+    unarchive:
+      #src: /home/{{ansible_ssh_user}}/iTrust/mysql-connector-java-5.1.44.tar.gz
+      src: "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.44.tar.gz"
+      dest: /home/{{ansible_ssh_user}}/iTrust/development
+      #remote_src: yes
+      copy: false
+    become: yes
+
+  - name: copy mysql connector jar to tomcat folder
+    become: yes
+    copy:
+      src: "/home/{{ansible_ssh_user}}/iTrust/development/mysql-connector-java-5.1.44/mysql-connector-java-5.1.44-bin.jar"
+      dest: "/home/{{ansible_ssh_user}}/iTrust/development/apache-tomcat-9.0.1/lib/mysql-connector-java-5.1.44-bin.jar"
+      remote_src: yes
+
+
+
+  - name: start Tomcat
+    become: yes
+    shell: "nohup /home/{{ansible_ssh_user}}/iTrust/development/apache-tomcat-9.0.1/bin/startup.sh"
+  #
+  # - name: clone the repo
+  #   git:
+  #     repo: "https://github.com/vchawla3/iTrust-v23.git"
+  #     dest: "/home/{{ansible_ssh_user}}/iTrustSource/"
+  #     clone: yes
+  #     update: yes

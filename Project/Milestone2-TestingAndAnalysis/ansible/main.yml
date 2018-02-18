@@ -1,0 +1,4 @@
+---
+- include: install_jenkins.yml
+- include: setupMYSQL_TOMCAT.yml
+- include: checkbox_analysis.yml

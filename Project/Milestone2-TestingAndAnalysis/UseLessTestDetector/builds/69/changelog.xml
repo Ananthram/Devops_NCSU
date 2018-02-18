@@ -1,0 +1,22 @@
+commit 8f007dc77398d38b0fc16d44017be068aa34eb2e
+tree ff04311e1ef9ba63cf26c53d5a1b704794c863f7
+parent 6d1722b29ac43001a4ecca4952e0d3d49e562e0b
+author Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:16 -0400
+committer Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:16 -0400
+
+     fuzzed code, Iteration 68
+
+
+
+:100644 100644 ae54a82aa2445f82461f59cb8047103628ab2820 a6b1675e399ebd5a7e147ca0c5aba2d73c4809f1 M	iTrust/src/main/edu/ncsu/csc/itrust/XmlGenerator.java
+:100644 100644 45fc1f6910b8b2e3a6922b0e26a243943a1c335f 1b7d064375e03a77916ed5e43c10c4f6dc8a181e M	iTrust/src/main/edu/ncsu/csc/itrust/action/ActivityFeedAction.java
+:100644 100644 bd59955a8205b0b969327cf8f138521d31f0c319 6144b7393c7f262d45ec082a873a59a435db07f4 M	iTrust/src/main/edu/ncsu/csc/itrust/action/AddApptRequestAction.java
+:100644 100644 c1d9aa0879b4915561561d62c89763ba0377e6a4 7b3d881fd032a70b8af790f2219b059ade613c91 M	iTrust/src/main/edu/ncsu/csc/itrust/action/AddPatientFileAction.java
+:100644 100644 4eb939cccb9a7527231e7c74b9e0f37313dcc9ec 8f49bfa046d060c0364b5cc63506a125f0b71218 M	iTrust/src/main/edu/ncsu/csc/itrust/action/LoginFailureAction.java
+:100644 100644 2a035516890e43a75300dd763af100fd6edc7152 8943b4e5e3a5fd01a2c4a2ca39e56fd2614c342f M	iTrust/src/main/edu/ncsu/csc/itrust/action/PayBillAction.java
+:100644 100644 c5a685a8e998ce89d470e0b52c4ddcae0f7aec56 65e972e14d8aa21050560c4f82265940e490302d M	iTrust/src/main/edu/ncsu/csc/itrust/action/SearchUsersAction.java
+:100644 100644 f2acbe8011db92ff3b8dd94116140097e02b2d0b d1abab4d1624f9563ed0ec8c303f2298cb9d74dd M	iTrust/src/main/edu/ncsu/csc/itrust/action/UpdateHospitalListAction.java
+:100644 100644 6107d7502883e50ad8de47027d019f758f6c191e 4081ddfc3af482eb8ffbb48bab8edf0cd4b1d5e5 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/NavigationController.java
+:100644 100644 ab2eab6c3f00f508d383fbfc6d6d4e188b035702 c4ab5f5e043d4731eaf5cf893739ed38c82d75e1 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/emergencyRecord/EmergencyRecordController.java
+:100644 100644 167d2140b0eefc1fb5f55c4e79f3b18e6d7c40c9 c0829d3d3f3ae5b67ffe474cf727d00b5240a771 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/prescription/PrescriptionForm.java
+:100644 100644 926ddba94d0222d410d0b12a8474f3a0aa0f2974 2399e9a568a4ee67c95f076f2de599817f8d89af M	iTrust/src/main/edu/ncsu/csc/itrust/server/RecordsReleaseServlet.java

@@ -1,0 +1,19 @@
+commit f70d154ff5e789b26724685083fd56d4a1d40d35
+tree 0ee50375f49292d96c3b186af079c877f72d7e95
+parent f3f2dc64176a706eaa833ff7de3fcce95cd33e0c
+author Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:34 -0400
+committer Bhavya Bansal <bhavyabnsl07@gmail.com> 2017-10-24 19:49:34 -0400
+
+     fuzzed code, Iteration 75
+
+
+
+:100644 100644 908adb5027da8c743b15252307cbc85dd2ab7689 cc1140a93a79dba7c4102186bd6b1c9c263c4610 M	iTrust/src/main/edu/ncsu/csc/itrust/HtmlEncoder.java
+:100644 100644 1936c29ad0dbd5171d6d338fe86e6ae841ff13d2 d39303067d969361c6e2cd985ce6e5d2520d2f7b M	iTrust/src/main/edu/ncsu/csc/itrust/action/RequestRecordsReleaseAction.java
+:100644 100644 10eb7184b85fb8ba150bc65191b7adf2dc303a44 3eee2bd395fe0a1836b13e07e1f07749a9d16d15 M	iTrust/src/main/edu/ncsu/csc/itrust/action/ViewApptRequestsAction.java
+:100644 100644 1f14266246cdc11d4ec3939cf8a03006e3cd6567 b0a22b6a967420308ef6bb83821a0f3448cc5c8c M	iTrust/src/main/edu/ncsu/csc/itrust/action/ViewMyRemoteMonitoringListAction.java
+:100644 100644 15e0bb8273fbb6e433099275f47c9f68052aea6d e88c8f1dd9aeca3e8d48bb8dd16d0ce4471603bb M	iTrust/src/main/edu/ncsu/csc/itrust/controller/immunization/ImmunizationForm.java
+:100644 100644 af6dfc220f231f7ccf7fe46b79051849bb54c6c8 295ea4039bfe9d53f892ab782d6c95be557e4805 M	iTrust/src/main/edu/ncsu/csc/itrust/controller/medicalProcedure/MedicalProcedureController.java
+:100644 100644 b969fd697335df937ed6e27c400a44bf77c6380c 7ba162a613a89237b6097b8e85ffd02cb0adff8d M	iTrust/src/main/edu/ncsu/csc/itrust/report/DemographicReportFilter.java
+:100644 100644 694e58dd734275fff9a132958a85807b2d899d42 5a499e0b19ef5effb1d5f14f22210d8394e0e07c M	iTrust/src/main/edu/ncsu/csc/itrust/report/PersonnelReportFilter.java
+:100644 100644 ce322a98c6cb447aea01c600f368bf69b62f207d cbbc22301cfa3f264221ea27437d0d4c03c5cbc9 M	iTrust/src/main/edu/ncsu/csc/itrust/server/WardRoomCRUDServlet.java
